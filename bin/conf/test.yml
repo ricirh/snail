@@ -1,0 +1,67 @@
+logs:
+    - name: root
+      level: info
+      formatter: "%d%T%m%n"
+      appender:
+        - type: FileLogAppender
+          path: log.txt
+        - type: StdoutLogAppender
+    - name: system
+      level: debug
+      formatter: "%d%T%m%n"
+      appender:
+      - type: FileLogAppender
+        path: log.txt
+      - type: StdoutLogAppender
+
+system:
+    port: 9900
+    value: 15
+    int_vec: 
+        - 10
+        - 20
+    int_list: [30, 40]
+    int_set: [50, 70, 70, 60]
+    int_uset: [50, 70, 70, 60]
+    int_map:
+        bfirst: 80
+        asecond: 90
+        cthrid: 100
+    int_umap:
+        bfirst: 80
+        asecond: 90
+        cthrid: 100
+
+class:
+    person:
+        name: snail
+        age: 10
+        sex: true
+    map: 
+        snail1:
+            name: snail1
+            age: 1
+            sex: true
+        snail2:
+            name: snail2
+            age: 2
+            sex: false
+        snail3:
+            name: snail3
+            age: 3
+            sex: true
+    vmap:
+        s1:
+            - name: m1
+              age: 33
+              sex: true
+            - name: m2
+              age: 34
+              sex: false
+        s2:
+            - name: m3
+              age: 35
+              sex: true
+            - name: m4
+              age: 36
+              sex: false
