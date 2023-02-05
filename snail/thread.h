@@ -168,6 +168,17 @@ namespace snail
 		pthread_mutex_t m_mutex;
 	};
 
+	class NullMutex
+	{
+	public:
+		typedef ScopedLockImpl<NullMutex> Lock;
+		NullMutex(){}
+		~NullMutex(){}
+		void lock(){}
+		void unlock(){}	
+	};
+
+
 	class RWMutex
 	{
 	public:
@@ -201,6 +212,18 @@ namespace snail
 
 	private:
 		pthread_rwlock_t m_lock;
+	};
+
+	class NullRWMutex
+	{
+	public:
+		typedef ReadScopedLockImpl<NullRWMutex> ReadLock;
+		typedef WriteScopedLockImpl<NullRWMutex> WriteLock;
+		NullRWMutex(){}
+		~NullRWMutex(){}
+		void rdlock(){}
+		void wrlock(){}
+		void unlock(){}	
 	};
 
 	class Thread

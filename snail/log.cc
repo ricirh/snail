@@ -238,6 +238,7 @@ namespace snail
 	}
 
 	void LogAppender::setFormatter(LogFormatter::ptr val) {
+		MutexType::Lock lock(m_mutex);
 		m_formatter = val;
 		if (m_formatter) 
 		{
@@ -249,6 +250,12 @@ namespace snail
 		}
 	}
 
+	LogFormatter::ptr LogAppender::getFormatter()
+	{
+		MutexType::Lock lock(m_mutex);
+		return m_formatter;
+	}
+
 	Logger::Logger(const std::string& name)
 		: m_name(name)
 		, m_level(LogLevel::DEBUG)
@@ -258,8 +265,10 @@ namespace snail
 
 	void Logger::addAppender(LogAppender::ptr appender)
 	{
+		MutexType::Lock lock(m_mutex);
 		if (!appender->getFormatter()) 
 		{
+			MutexType::Lock ll(appender->m_mutex);
 			appender->m_formatter = m_formatter;
 			appender->setLevel(m_level);
 		}
@@ -268,6 +277,7 @@ namespace snail
 
 	void Logger::delAppender(LogAppender::ptr appender)
 	{
+		MutexType::Lock lock(m_mutex);
 		for(auto it = m_appenders.begin(); it != m_appenders.end(); it++)
 		{
 			if(*it == appender) 
@@ -280,14 +290,17 @@ namespace snail
 
 	void Logger::clearAppenders()
 	{
+		MutexType::Lock lock(m_mutex);
 		m_appenders.clear();
 	}
 
 	void Logger::setFormatter(LogFormatter::ptr val)
 	{
+		MutexType::Lock lock(m_mutex);
 		m_formatter = val;
 		for (auto& i : m_appenders)
 		{
+			MutexType::Lock ll(i->m_mutex);
 			if (!i->m_hasFormatter)
 			{
 				i->m_formatter = m_formatter;
@@ -319,6 +332,7 @@ namespace snail
 		if(level >= m_level) 
 		{
 			auto self = shared_from_this();
+			MutexType::Lock lock(m_mutex);
 			if (!m_appenders.empty())
 			{
 				for (auto& i : m_appenders)
@@ -360,6 +374,7 @@ namespace snail
 
 	std::string Logger::toYamlString()
 	{
+		MutexType::Lock lock(m_mutex);
 		YAML::Node node;
 		node["name"] = m_name;
 		if (m_level != LogLevel::UNKNOW)
@@ -393,6 +408,7 @@ namespace snail
 
 	bool FileLogAppender::reopen()
 	{
+		MutexType::Lock lock(m_mutex);
 		if(m_filestream) 
 		{
 				m_filestream.close();
@@ -407,6 +423,7 @@ namespace snail
 	{
 		if(level >= m_level)
 		{
+			MutexType::Lock lock(m_mutex);
 			m_filestream << m_formatter->format(logger, level, event);
 		}
 	}
@@ -435,6 +452,7 @@ namespace snail
 	{
 		if(level >= m_level)
 		{
+			MutexType::Lock lock(m_mutex);
 			std::cout << m_formatter->format(logger, level, event);
 		}
 	}
@@ -899,6 +917,7 @@ namespace snail
 
 	Logger::ptr LoggerManager::getLogger(const std::string& name)
 	{
+		MutexType::Lock lock(m_mutex);
 		auto it = m_loggers.find(name);
 		if (it != m_loggers.end())
 		{
@@ -912,6 +931,7 @@ namespace snail
 
 	std::string LoggerManager::toYamlString()
 	{
+		MutexType::Lock lock(m_mutex);
 		YAML::Node node;
 		for (auto& i : m_loggers)
 		{
