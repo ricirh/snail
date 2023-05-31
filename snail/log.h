@@ -18,7 +18,7 @@
 	if(logger->getLevel() <= level) \
 		snail::LogEventWrap(snail::LogEvent::ptr(new snail::LogEvent(logger, level, \
 			__FILE__, __LINE__, 0, snail::GetThreadId(), \
-			snail::GetFiberId(), time(0)))).getSS()
+			snail::GetFiberId(), time(0), snail::Thread::GetName()))).getSS()
 
 #define SNAIL_LOG_DEBUG(logger) SNAIL_LOG_LEVEL(logger, snail::LogLevel::DEBUG)
 #define SNAIL_LOG_INFO(logger) SNAIL_LOG_LEVEL(logger, snail::LogLevel::INFO)
@@ -30,7 +30,7 @@
 	if(logger->getLevel() <= level) \
 		snail::LogEventWrap(snail::LogEvent::ptr(new snail::LogEvent(logger, level, \
 							__FILE__, __LINE__, 0, snail::GetThreadId(), \
-			snail::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+			snail::GetFiberId(), time(0), snail::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 #define SNAIL_LOG_FMT_DEBUG(logger, fmt, ...) SNAIL_LOG_FMT_LEVEL(logger, snail::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define SNAIL_LOG_FMT_INFO(logger, fmt, ...) SNAIL_LOG_FMT_LEVEL(logger, snail::LogLevel::INFO, fmt, __VA_ARGS__)
@@ -70,7 +70,8 @@ namespace snail
 		typedef std::shared_ptr<LogEvent> ptr;
 		LogEvent(std::shared_ptr<Logger> looger, LogLevel::Level level
 				, const char* file, int32_t line, uint32_t elapse
-				, uint32_t thread_id, uint32_t fiber_id, uint64_t time);
+				, uint32_t thread_id, uint32_t fiber_id, uint64_t time
+				,const std::string& thread_name);
 
 		const char* getFile() const { return m_file; }
 		int32_t getLine() const { return m_line; }
@@ -145,7 +146,7 @@ namespace snail
 		friend class Logger;
 	public:
 		typedef std::shared_ptr<LogAppender> ptr;
-		typedef NullMutex MutexType;
+		typedef CASLock MutexType;
 		virtual ~LogAppender() {}
 
 		virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
@@ -170,7 +171,7 @@ namespace snail
 		friend class LoggerManager;
 	public:
 		typedef std::shared_ptr<Logger> ptr;
-		typedef NullMutex MutexType;
+		typedef CASLock MutexType;
 
 		Logger(const std::string& name = "root");
 
@@ -227,12 +228,13 @@ namespace snail
 	private:
 		std::string m_filename;
 		std::ofstream m_filestream;
+		uint64_t m_lastTime = 0;
 	};
 
 	class LoggerManager
 	{
 	public:
-		typedef NullMutex MutexType;
+		typedef CASLock MutexType;
 
 		LoggerManager();
 		Logger::ptr getLogger(const std::string& name);

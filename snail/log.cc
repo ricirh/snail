@@ -65,6 +65,16 @@ namespace snail
 		}
 	};
 
+	class ThreadNameFormatItem : public LogFormatter::FormatItem
+	{
+	public:
+		ThreadNameFormatItem(const std::string& str = "") {}
+		void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event)
+		{
+			os << event->getThreadName();
+		}
+	};
+
 	class DateTimeFormatItem : public LogFormatter::FormatItem
 	{
 	public:
@@ -191,7 +201,7 @@ namespace snail
 	}
 	
 	LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* file, int32_t line, uint32_t elapse
-		, uint32_t thread_id, uint32_t fiber_id, uint64_t time)
+		, uint32_t thread_id, uint32_t fiber_id, uint64_t time, const std::string& thread_name)
 		:m_file(file)
 		, m_line(line)
 		, m_elapse(elapse)
@@ -200,6 +210,7 @@ namespace snail
 		, m_time(time)
 		, m_logger(logger)
 		, m_level(level)
+		, m_threadName(thread_name)
 	{
 		
 	}
@@ -260,7 +271,7 @@ namespace snail
 		: m_name(name)
 		, m_level(LogLevel::DEBUG)
 	{
-		m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m\n"));
+		m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m\n"));
 	}
 
 	void Logger::addAppender(LogAppender::ptr appender)
@@ -423,6 +434,12 @@ namespace snail
 	{
 		if(level >= m_level)
 		{
+			uint64_t now = time(0);
+			if(now != m_lastTime)
+			{
+				m_lastTime = now;
+				reopen();
+			}
 			MutexType::Lock lock(m_mutex);
 			m_filestream << m_formatter->format(logger, level, event);
 		}
@@ -602,6 +619,7 @@ namespace snail
 			XX(l, LineFormatItem),
 			XX(T, TabFormatItem),
 			XX(F, FiberIdFormatItem),
+			XX(N, ThreadNameFormatItem)
 	#undef XX
 		};
 	
@@ -825,8 +843,8 @@ namespace snail
 	{
 		LogIniter()
 		{
-			SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << "on_logger_conf_changed";
-			g_log_defines->addListener(0xF1E231, [](const std::set<LogDefine>& old_value,
+			//SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << "on_logger_conf_changed";
+			g_log_defines->addListener([](const std::set<LogDefine>& old_value,
 				const std::set<LogDefine>& new_value) {
 					
 					for (auto& i : new_value)

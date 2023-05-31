@@ -1,0 +1,5 @@
+# ninja log v5
+3	725	6918432687077138	CMakeFiles/test.dir/tests/test.cc.obj	9cc941449c2676cc
+1053	1260	6918432691667120	../../../bin/test.exe	32c0c91974c4c994
+1	961	6918432689419905	CMakeFiles/snail.dir/snail/log.cc.obj	9288fb5dc95e4452
+962	1053	6918432689798521	../../../lib/snail.lib	cf82e4c98a1d5f84

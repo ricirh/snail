@@ -6,10 +6,13 @@
 #include <memory>
 #include <pthread.h>
 #include <semaphore.h>
+#include <atomic>
+
+#include "noncopyable.h"
 
 namespace snail
 {
-	class Semaphore
+	class Semaphore : public Noncopyable
 	{
 	public:
 		Semaphore(uint32_t count = 0);
@@ -140,7 +143,7 @@ namespace snail
 		bool m_locked;
 	};
 
-	class Mutex
+	class Mutex : Noncopyable
 	{
 	public:
 		typedef ScopedLockImpl<Mutex> Lock;
@@ -168,7 +171,7 @@ namespace snail
 		pthread_mutex_t m_mutex;
 	};
 
-	class NullMutex
+	class NullMutex : Noncopyable
 	{
 	public:
 		typedef ScopedLockImpl<NullMutex> Lock;
@@ -179,7 +182,7 @@ namespace snail
 	};
 
 
-	class RWMutex
+	class RWMutex : Noncopyable
 	{
 	public:
 		typedef ReadScopedLockImpl<RWMutex> ReadLock;
@@ -214,7 +217,7 @@ namespace snail
 		pthread_rwlock_t m_lock;
 	};
 
-	class NullRWMutex
+	class NullRWMutex : Noncopyable
 	{
 	public:
 		typedef ReadScopedLockImpl<NullRWMutex> ReadLock;
@@ -224,6 +227,59 @@ namespace snail
 		void rdlock(){}
 		void wrlock(){}
 		void unlock(){}	
+	};
+
+	class Spinlock : Noncopyable
+	{
+	public:
+		typedef ScopedLockImpl<Spinlock> Lock;
+		Spinlock()
+		{
+			pthread_spin_init(&m_mutex, 0);
+		}
+		~Spinlock()
+		{
+			pthread_spin_destroy(&m_mutex);
+		}
+		void lock()
+		{
+			pthread_spin_lock(&m_mutex);
+		}
+		void unlock()
+		{
+			pthread_spin_unlock(&m_mutex);
+		}
+
+	private:
+		pthread_spinlock_t m_mutex;
+	};
+
+	class CASLock : Noncopyable
+	{
+	public:
+		typedef ScopedLockImpl<CASLock> Lock;
+		CASLock()
+		{
+			m_mutex.clear();
+		}
+
+		~CASLock()
+		{
+			
+		}
+
+		void lock()
+		{
+			while(std::atomic_flag_test_and_set_explicit(&m_mutex,std::memory_order_acquire));
+		}
+
+		void unlock()
+		{
+			std::atomic_flag_clear_explicit(&m_mutex, std::memory_order_release);
+		}
+
+	private:
+		volatile std::atomic_flag m_mutex;
 	};
 
 	class Thread

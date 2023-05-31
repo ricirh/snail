@@ -187,7 +187,7 @@ void test_class()
 		SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << #prefix << " " << " : size= " << m.size(); \
 	}
 
-	g_person_config->addListener(10, [](const Person& old_value, const Person& new_value) {
+	g_person_config->addListener([](const Person& old_value, const Person& new_value) {
 		SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << "old_value:" << old_value.toString()
 			<< " new_value:" << new_value.toString();
 		});
@@ -237,5 +237,13 @@ int main()
 	test_log();
 	//SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << g_int_value_config->getValue();
 	//SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << g_int_value_config->toString();
+
+	snail::Config::Visit([](snail::ConfigVarBase::ptr var)
+	{
+		SNAIL_LOG_INFO(SNAIL_LOG_ROOT()) << "name=" << var->getName()
+			<< " description=" << var->getDescription()
+			<< " typename=" << var->getTypeName()
+			<< " value=" << var->toString();		
+	});
 	return 0;
 }
